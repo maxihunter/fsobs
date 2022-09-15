@@ -9,16 +9,16 @@
 #define CFG_FOLDER "folder"
 
 struct global_config {
-    int nomber;
+    int number;
     char path[1024];
     char orig_size[128];
-    int size; //size in bytes
+    unsigned long int size; //size in bytes
     int sort_type;
 };
 
 struct file_info {
     char path[1024];
-    long int size;
+    unsigned long int size;
     time_t ctime;
 };
 

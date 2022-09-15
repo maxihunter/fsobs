@@ -60,7 +60,8 @@ int main (int argc, char ** argv) {
     struct dirent *dir;
     char location[1024] = {0};
     struct stat st;
-    int total_size = 0, count = 0;
+    unsigned long int total_size = 0;
+    unsigned int count = 0;
     struct file_info * fi = NULL;
 
     d = opendir(cfg.path);
@@ -85,7 +86,7 @@ int main (int argc, char ** argv) {
         }
         closedir(d);
     }
-    printf("Total size of %d files: %s (%d bytes)\n", count, print_pretty_size(total_size), total_size );
+    printf("Total size of %d files: %s (%lu bytes)\n", count, print_pretty_size(total_size), total_size );
     if (total_size < cfg.size) {
         printf ("Quota is not reached (given %s). Nothing to do\n", cfg.orig_size);
         return 0;
@@ -108,7 +109,7 @@ int main (int argc, char ** argv) {
     }
     */
 
-    int new_size = total_size;
+    unsigned long int new_size = total_size;
     int rem_count = 0;
     for (int i = 0; i < count; i++) {
         if ((new_size -= (fi+i)->size) < cfg.size) {
@@ -119,7 +120,7 @@ int main (int argc, char ** argv) {
     printf ("-----------------------\n");
     char new_s[128] = {0};
     strcpy(new_s, print_pretty_size(new_size));
-    printf ("Old size: %s (%d bytes);\nNew size: %s (%d bytes);\nNeed to remove %d files\n",
+    printf ("New size: %s (%lud bytes); Need to remove %d files\n",
             print_pretty_size(total_size),
             total_size, 
             new_s,
@@ -131,7 +132,7 @@ int main (int argc, char ** argv) {
     for (int i = 0; i <= rem_count; i++) {
         //remove files!!!!
         if (dry_run) {
-            printf("[%d] %s: %s (%d bytes)\n", i, (fi+i)->path, 
+            printf("[%d] %s: %s (%lu bytes)\n", i, (fi+i)->path, 
                     print_pretty_size((fi+i)->size), (fi+i)->size);
         } else {
             printf("Delete: %s\n", (fi+i)->path);
@@ -203,23 +204,24 @@ char * print_pretty_size(int size) {
     char suff = ' ';
     static char buff[128] = {0};
     float h_rsize = size;
-    int cycles = 1;
-    while ((h_rsize/=1000) > 1000) {
+    int cycles = 0;
+    while (h_rsize > 1000) {
         cycles++;
-        switch (cycles) {
-            case 1:
-                suff = 'K';
-                break;
-            case 2:
-                suff = 'M';
-                break;
-            case 3:
-                suff = 'G';
-                break;
-            case 4:
-                suff = 'T';
-                break;
-        }
+        h_rsize/=1000;
+    }
+    switch (cycles) {
+        case 1:
+            suff = 'K';
+            break;
+        case 2:
+            suff = 'M';
+            break;
+        case 3:
+            suff = 'G';
+            break;
+        case 4:
+            suff = 'T';
+            break;
     }
     snprintf(buff, 128, "%2.2f%c", h_rsize, suff);
     //printf("result: %s\n", buff);
