@@ -20,7 +20,7 @@ struct global_config cfg;
 
 int read_cfg_file(char * fl);
 void print_help(char * name);
-char * print_pretty_size(int size);
+char * print_pretty_size(unsigned long int size);
 
 int main (int argc, char ** argv) {
     char conf_file[1024] = {0};
@@ -95,6 +95,9 @@ int main (int argc, char ** argv) {
     struct file_info tmp;
     for (int i = 0; i < count; i++) {
         for (int j = 0; j < count-1; j++) {
+			double res = i;
+			unsigned int pers = (res/count)*100;
+			printf ("Sorting files %d%% in %d of %d (cycle %d)...\r", j, count, i);
             if ((fi+j)->ctime > (fi+j+1)->ctime) {
                 memcpy(&tmp, (fi+j), sizeof(struct file_info));
                 memcpy(fi+j, fi+j+1, sizeof(struct file_info));
@@ -102,6 +105,8 @@ int main (int argc, char ** argv) {
             }
         }
     }
+
+	printf("\n");
 
     /*
     for (int i = 0; i < count; i++) {
@@ -119,10 +124,14 @@ int main (int argc, char ** argv) {
     }
     printf ("-----------------------\n");
     char new_s[128] = {0};
+	char target_s[128] = {0};
     strcpy(new_s, print_pretty_size(new_size));
-    printf ("New size: %s (%lud bytes); Need to remove %d files\n",
-            print_pretty_size(total_size),
-            total_size, 
+    strcpy(target_s, print_pretty_size(total_size));
+    printf ("Target size: %s (%lu b) of %s (%lu b); New size is %s (%lu b). Need to remove %d files\n",
+            print_pretty_size(cfg.size),
+            cfg.size,
+            target_s,
+            total_size,
             new_s,
             new_size, rem_count+1);
 
@@ -156,9 +165,9 @@ int read_cfg_file(char * fl) {
     char * p = 0;
     while (! feof(fp)) {
         if (fgets(line, sizeof(line), fp)) {
-            if ((p = strstr(line, "#")) != 0) {
+            if (*line == '#') {
                 // skip comments
-                *p = '\0';
+                continue;
             }
             line[strlen(line)-1] = '\0';
             p = strstr(line, "=");
@@ -167,7 +176,7 @@ int read_cfg_file(char * fl) {
                 //printf("Param \"%s\" with value \"%s\"\n", param, p+1);
                 if (strcmp(CFG_SIZE, param) == 0) {
                     strncpy(cfg.orig_size, p+1, sizeof(cfg.orig_size));
-                    int multi = 1;
+                    unsigned long int multi = 1;
                     char * ch = &(line[strlen(line)-1]);
                     switch (line[strlen(line)-1]) {
                         case 'T':
@@ -182,7 +191,7 @@ int read_cfg_file(char * fl) {
                         default:
                             multi = 1;
                     }
-                    //printf("Value of multiplier is \"%c\" = %d\n", ch, multi);
+                    //printf("Value of multiplier is \"%c\" = %lu\n", ch, multi);
                     *p = '\0';
                     cfg.size = atoi(p+1) * multi;
                 } else
@@ -200,7 +209,7 @@ int read_cfg_file(char * fl) {
     return 0;
 }
 
-char * print_pretty_size(int size) {
+char * print_pretty_size(unsigned long int size) {
     char suff = ' ';
     static char buff[128] = {0};
     float h_rsize = size;
