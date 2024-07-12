@@ -24,11 +24,13 @@ char * print_pretty_size(unsigned long int size);
 
 int main (int argc, char ** argv) {
     char conf_file[1024] = {0};
+	char target_size[64] = {0};
+	char target_folder[1024] = {0};
     int dry_run = 1;
     int opt = 0;
 
     snprintf(conf_file, 1024, "%s", DEF_CONFIG_FILE);
-    while ((opt = getopt(argc, argv, "hrc:")) != -1) {
+    while ((opt = getopt(argc, argv, "hrc:s:f:")) != -1) {
         switch(opt) {
             case 'h':
             case '?':
@@ -40,12 +42,28 @@ int main (int argc, char ** argv) {
             case 'c':
                 snprintf(conf_file, 1024, "%s", optarg);
                 break;
+			case 's':
+                snprintf(target_size, 1024, "%s", optarg);
+                break;
+			case 'f':
+                snprintf(target_folder, 1024, "%s", optarg);
+                break;
         }
     }
 
-    memset(&cfg, 0, sizeof(struct global_config));
-    if (read_cfg_file(conf_file)) {
-        return 0;
+    if (strlen(conf_file) > 0) {
+        memset(&cfg, 0, sizeof(struct global_config));
+        if (read_cfg_file(conf_file)) {
+            return 0;
+        }
+    }
+    
+    if (strlen(target_size) > 0) {
+        cfg.size = get_size_from_pretty_str(target_size);
+    }
+    
+    if (strlen(target_folder) > 0) {
+        strncpy(cfg.path, target_folder, sizeof(cfg.path));
     }
 
     if (cfg.size == 0) {
@@ -237,11 +255,36 @@ char * print_pretty_size(unsigned long int size) {
     return buff;
 }
 
+unsigned long int get_size_from_pretty_str(const char *size) {
+    unsigned long int multi = 1;
+    switch (*(size+strlen(size)-1)) {
+        case 't':
+        case 'T':
+            multi *= 1000;
+        case 'g':
+        case 'G':
+            multi *= 1000;
+        case 'm':
+        case 'M':
+            multi *= 1000;
+        case 'k':
+        case 'K':
+            multi *= 1000;
+            break;
+        default:
+            multi = 1;
+    }
+    //printf("value of multiplier is \"%c\" = %lu\n", ch, multi);
+    return = atoi(size) * multi;
+}
+
 void print_help(char * name) {
     printf("FS Observer v%s\n", VERSION_NUMBER);
-    printf("Usage: %s [-h] [-r] [-c <config_file>]\n", name);
-    printf("\t-c specify config file location. Defailt name is \"%s\" in current folder\n", DEF_CONFIG_FILE);
-    printf("\t-r Run with removing files. Without this option files for remove just will be printed in console.\n");
-    printf("\t-h Print help and exit\n");
+    printf("Usage: %s [-h] [-r] [-c <config file>] [-s <target size>] [-f <target folder>]\n", name);
+    printf("\t-c\tspecify config file location.");
+    printf("\t-r\trun with removing files. Without this option files for remove just will be printed in console.\n");
+    printf("\t-s\tfolder size quota to limit. It is possible to use human readable letter (e.g. K,M,G,T)\n");
+    printf("\t-f\tfolder path to limit\n");
+    printf("\t-h\tPrint help and exit\n");
 }
 
