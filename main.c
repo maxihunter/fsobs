@@ -110,16 +110,21 @@ int main (int argc, char ** argv) {
         return 0;
     }
 
-    struct file_info tmp;
+    struct file_info *tmp;
     for (int i = 0; i < count; i++) {
         for (int j = 0; j < count-1; j++) {
 			double res = i;
 			unsigned int pers = (res/count)*100;
 			printf ("Sorting files %d%% in %d of %d (cycle %d)...\r", j, count, i);
             if ((fi+j)->ctime > (fi+j+1)->ctime) {
+                tmp = (fi + j);
+                (fi + j + 1) = fi + j;
+                (fi + j + 1) = tmp;
+                /*
                 memcpy(&tmp, (fi+j), sizeof(struct file_info));
                 memcpy(fi+j, fi+j+1, sizeof(struct file_info));
                 memcpy(fi+j+1, &tmp, sizeof(struct file_info));
+                */
             }
         }
     }
